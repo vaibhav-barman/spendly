@@ -1,9 +1,18 @@
 import os
+from datetime import datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from database.db import get_db, init_db, seed_db
+from database.db import (
+    get_category_breakdown,
+    get_db,
+    get_expense_summary,
+    get_recent_expenses,
+    get_user_by_id,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 # The fallback is for local development only; set SECRET_KEY in any real deployment.
@@ -12,6 +21,24 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
 with app.app_context():
     init_db()
     seed_db()
+
+
+@app.template_filter("inr")
+def inr_filter(value):
+    """Format a number as rupees with Indian digit grouping, e.g. ₹1,23,456.00."""
+    amount = float(value or 0)
+    sign = "-" if amount < 0 else ""
+    whole, frac = f"{abs(amount):.2f}".split(".")
+    if len(whole) > 3:
+        head, tail = whole[:-3], whole[-3:]
+        groups = []
+        while len(head) > 2:
+            groups.insert(0, head[-2:])
+            head = head[:-2]
+        if head:
+            groups.insert(0, head)
+        whole = ",".join(groups + [tail])
+    return f"{sign}₹{whole}.{frac}"
 
 
 # ------------------------------------------------------------------ #
@@ -79,9 +106,53 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
+def _profile_transactions(user_id):
+    return get_recent_expenses(user_id)
+
+
+def _profile_stats(user_id):
+    return get_expense_summary(user_id)
+
+
+def _profile_categories(user_id):
+    return get_category_breakdown(user_id)
+
+
+def _build_profile_user(row):
+    parts = row["name"].split()
+    initials = "".join(p[0] for p in parts[:2]).upper() or "?"
+    try:
+        member_since = datetime.strptime(
+            row["created_at"], "%Y-%m-%d %H:%M:%S"
+        ).strftime("%B %Y")
+    except (TypeError, ValueError):
+        member_since = "—"
+    return {
+        "initials": initials,
+        "name": row["name"],
+        "email": row["email"],
+        "member_since": member_since,
+    }
+
+
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    user_row = get_user_by_id(user_id)
+    if user_row is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template(
+        "profile.html",
+        user=_build_profile_user(user_row),
+        stats=_profile_stats(user_id),
+        transactions=_profile_transactions(user_id),
+        categories=_profile_categories(user_id),
+    )
 
 
 @app.route("/expenses/add")
