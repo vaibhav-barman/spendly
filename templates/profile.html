@@ -18,6 +18,42 @@
         </div>
     </div>
 
+    <div class="filter-bar">
+        {% if filter_error %}
+        <div class="filter-error" role="alert">{{ filter_error }}</div>
+        {% endif %}
+
+        <nav class="filter-presets" aria-label="Quick date ranges">
+            {% for p in presets %}
+            <a class="btn-ghost filter-preset{% if p.key == active_key %} is-active{% endif %}"
+               href="{{ url_for('profile', date_from=p.date_from, date_to=p.date_to) }}"
+               {% if p.key == active_key %}aria-current="true"{% endif %}>{{ p.label }}</a>
+            {% endfor %}
+        </nav>
+
+        <form class="filter-custom{% if active_key is none %} is-active{% endif %}"
+              method="get" action="{{ url_for('profile') }}">
+            <div class="filter-field">
+                <label class="filter-label" for="date_from">From</label>
+                <input class="form-input" type="date" id="date_from" name="date_from" value="{{ date_from or '' }}">
+            </div>
+            <div class="filter-field">
+                <label class="filter-label" for="date_to">To</label>
+                <input class="form-input" type="date" id="date_to" name="date_to" value="{{ date_to or '' }}">
+            </div>
+            <button class="btn-primary" type="submit">Apply</button>
+        </form>
+
+        {% if is_filtered %}
+        <p class="filter-summary">
+            Showing
+            {% if date_from and date_to %}{{ date_from }} to {{ date_to }}
+            {% elif date_from %}{{ date_from }} onwards
+            {% else %}up to {{ date_to }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+
     <div class="profile-stats">
         <div class="stat-card">
             <span class="stat-label">Total spent</span>
@@ -60,7 +96,7 @@
                 </table>
             </div>
             {% else %}
-            <p class="empty-state">No transactions yet.</p>
+            <p class="empty-state">{% if is_filtered %}No transactions in this date range.{% else %}No transactions yet.{% endif %}</p>
             {% endif %}
         </div>
 
@@ -79,7 +115,7 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="empty-state">No spending to break down yet.</p>
+            <p class="empty-state">{% if is_filtered %}No spending in this date range.{% else %}No spending to break down yet.{% endif %}</p>
             {% endif %}
         </div>
     </div>
