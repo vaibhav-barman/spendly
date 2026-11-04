@@ -1,5 +1,6 @@
+import calendar
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -106,16 +107,49 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
-def _profile_transactions(user_id):
-    return get_recent_expenses(user_id)
+def _parse_iso_date(value):
+    """Return value as a normalised YYYY-MM-DD string, or None if missing/invalid."""
+    try:
+        return datetime.strptime(value or "", "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return None
 
 
-def _profile_stats(user_id):
-    return get_expense_summary(user_id)
+def _parse_date_range(args):
+    """Read date_from / date_to from the query string.
+
+    Each bound is validated on its own; a missing or malformed one is an open
+    bound. Returns (date_from, date_to, error). An inverted range clears both
+    bounds and reports an error.
+    """
+    date_from = _parse_iso_date(args.get("date_from"))
+    date_to = _parse_iso_date(args.get("date_to"))
+    if date_from and date_to and date_from > date_to:
+        return None, None, "Start date must be before end date."
+    return date_from, date_to, None
 
 
-def _profile_categories(user_id):
-    return get_category_breakdown(user_id)
+def _build_presets(today):
+    """Quick-pick ranges, aligned to calendar months and ending on the last day
+    of the current month. All Time has no bounds (a clean /profile URL)."""
+    def month_start(months_back):
+        year, month = divmod(today.year * 12 + today.month - 1 - months_back, 12)
+        return date(year, month + 1, 1).isoformat()
+
+    month_end = date(
+        today.year, today.month, calendar.monthrange(today.year, today.month)[1]
+    ).isoformat()
+
+    presets = [
+        {"key": key, "label": label, "date_from": month_start(back), "date_to": month_end}
+        for key, label, back in (
+            ("month", "This Month", 0),
+            ("3m", "Last 3 Months", 2),
+            ("6m", "Last 6 Months", 5),
+        )
+    ]
+    presets.append({"key": "all", "label": "All Time", "date_from": None, "date_to": None})
+    return presets
 
 
 def _build_profile_user(row):
@@ -146,12 +180,29 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    date_from, date_to, filter_error = _parse_date_range(request.args)
+    presets = _build_presets(date.today())
+    active_key = next(
+        (
+            p["key"]
+            for p in presets
+            if (p["date_from"], p["date_to"]) == (date_from, date_to)
+        ),
+        None,
+    )
+
     return render_template(
         "profile.html",
         user=_build_profile_user(user_row),
-        stats=_profile_stats(user_id),
-        transactions=_profile_transactions(user_id),
-        categories=_profile_categories(user_id),
+        stats=get_expense_summary(user_id, date_from=date_from, date_to=date_to),
+        transactions=get_recent_expenses(user_id, date_from=date_from, date_to=date_to),
+        categories=get_category_breakdown(user_id, date_from=date_from, date_to=date_to),
+        date_from=date_from,
+        date_to=date_to,
+        is_filtered=bool(date_from or date_to),
+        presets=presets,
+        active_key=active_key,
+        filter_error=filter_error,
     )
 
 
