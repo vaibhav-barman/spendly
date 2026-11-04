@@ -1,25 +1,117 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Project overview
 
-Spendly: a Flask expense tracker built as a numbered, step-by-step scaffold (Step 1 = database setup, Step 3 = logout, Step 4 = profile, Steps 7–9 = add/edit/delete expenses).
+Spendly is a lightweight personal expense tracker built with Flask and SQLite.
 
-## Commands
-
-- Python 3.14, virtualenv at `.venv/` (already has Flask). Install deps with `.venv/bin/pip install -r requirements.txt`.
-- Run: `python app.py`: Flask dev server with debug on, **port 5001** (not 5000).
-- Test: `pytest` (pytest + pytest-flask). Single test: `pytest path/to/test_file.py::test_name`. No tests exist yet.
-- `pyproject.toml`, `uv.lock` and `src/expense_tracker/` are an unrelated uv skeleton. Don't add Flask deps there; `requirements.txt` is the source of truth.
+---
 
 ## Architecture
+```
+spendly/
+├── app.py              # All routes — single file, no blueprints
+├── database/
+│   └── db.py           # SQLite helpers: get_db(), init_db(), seed_db()
+├── templates/
+│   ├── base.html       # Shared layout — all templates must extend this
+│   └── *.html          # One template per page
+├── static/
+│   ├── css/
+│   │   ├── style.css       # Global styles
+│   │   └── landing.css     # Landing-page-only styles
+│   └── js/
+│       └── main.js         # Vanilla JS only
+└── requirements.txt
+```
 
-- `app.py` is the entry point and holds every route. Placeholder routes return strings like "coming in Step N".
-- **Only implement the step you were asked for.** Don't fill in other placeholder routes.
-- `database/db.py` is currently a stub. It is meant to hold `get_db()` (SQLite connection with `row_factory` and foreign keys on), `init_db()` (`CREATE TABLE IF NOT EXISTS`) and `seed_db()` (sample dev data).
-- Templates in `templates/` extend `base.html`, which provides the `title`, `head`, `content` and `scripts` blocks plus the shared navbar and footer. Put page-specific JS inline in `{% block scripts %}`. `static/js/main.js` is an empty global placeholder.
-- All CSS lives in the single `static/css/style.css`; the legal pages (terms, privacy) share styles. Don't add separate CSS files.
-- Currency is INR (₹) everywhere: UI copy, mock data and seed data.
+**Where things belong:**
+- New routes → `app.py` only, no blueprints
+- DB logic → `database/db.py` only, never inline in routes
+- New pages → new `.html` file extending `base.html`
+- Page-specific styles → new `.css` file, not inline `<style>` tags
 
-## Git
+---
 
-- Commit messages use a lowercase `area: message` prefix, e.g. `landing: add youtube modal`.
+## Code style
+
+- Python: PEP 8, snake_case for all variables and functions
+- Templates: Jinja2 with `url_for()` for every internal link — never hardcode URLs
+- Route functions: one responsibility only — fetch data, render template, done
+- DB queries: always use parameterized queries (`?` placeholders) — never f-strings in SQL
+- Error handling: use `abort()` for HTTP errors, not bare `return "error string"`
+
+---
+
+## Tech constraints
+
+- **Flask only** — no FastAPI, no Django, no other web frameworks
+- **SQLite only** — no PostgreSQL, no SQLAlchemy ORM, no external DB
+- **Vanilla JS only** — no React, no jQuery, no npm packages
+- **No new pip packages** — work within `requirements.txt` as-is unless explicitly told otherwise
+- Python 3.10+ assumed — f-strings and `match` statements are fine
+
+---
+
+## Subagent Policy
+- Always use a builtin explore subagent for codebase exploration 
+  before implementing any new feature
+- Always use a subagent to verify test results 
+  after any implementation
+- When asked to plan, delegate codebase research 
+  to a subagent before presenting the plan
+- always use a builtin plan subagent in plan mode
+
+---
+
+## Commands
+```bash
+# Setup
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run dev server (port 5001)
+python app.py
+
+# Run all tests
+pytest
+
+# Run a specific test file
+pytest tests/test_foo.py
+
+# Run a specific test by name
+pytest -k "test_name"
+
+# Run tests with output visible
+pytest -s
+```
+
+---
+
+## Implemented vs stub routes
+
+| Route | Status |
+|---|---|
+| `GET /` | Implemented — renders `landing.html` |
+| `GET /register` | Implemented — renders `register.html` |
+| `GET /login` | Implemented — renders `login.html` |
+| `GET /logout` | Stub — Step 3 |
+| `GET /profile` | Stub — Step 4 |
+| `GET /expenses/add` | Stub — Step 7 |
+| `GET /expenses/<id>/edit` | Stub — Step 8 |
+| `GET /expenses/<id>/delete` | Stub — Step 9 |
+
+**Do not implement a stub route unless the active task explicitly targets that step.**
+
+---
+
+## Warnings and things to avoid
+
+- **Never use raw string returns for stub routes** once a step is implemented — always render a template
+- **Never hardcode URLs** in templates — always use `url_for()`
+- **Never put DB logic in route functions** — it belongs in `database/db.py`
+- **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
+- **Never use JS frameworks** — the frontend is intentionally vanilla
+- **`database/db.py` is currently empty** — do not assume helpers exist until the step that implements them
+- **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
+- The app runs on **port 5001**, not the Flask default 5000 — don't change this
