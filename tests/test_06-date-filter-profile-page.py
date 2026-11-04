@@ -805,7 +805,7 @@ class TestGetRecentExpenses:
     def test_row_shape_unchanged_when_filtered(self, feb_user_id):
         rows = db.get_recent_expenses(feb_user_id, date_from="2024-02-01", date_to="2024-02-29")
         assert rows, "Expected rows in range"
-        assert set(rows[0]) == {"date", "description", "category", "amount"}
+        assert set(rows[0]) == {"id", "date", "description", "category", "amount"}
 
     def test_both_bounds_are_inclusive_and_ordered_newest_first(self, feb_user_id):
         rows = db.get_recent_expenses(feb_user_id, date_from="2024-02-01", date_to="2024-02-29")

@@ -6,7 +6,8 @@ def test_newest_first(demo_user_id):
     assert rows[0]["description"] == "Dinner out"
     dates = [r["date"] for r in rows]
     assert dates == sorted(dates, reverse=True)
-    assert set(rows[0]) == {"date", "description", "category", "amount"}
+    assert set(rows[0]) == {"id", "date", "description", "category", "amount"}
+    assert isinstance(rows[0]["id"], int)
 
 
 def test_limit_respected(demo_user_id):

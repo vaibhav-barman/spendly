@@ -3,7 +3,7 @@ import os
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (
@@ -11,11 +11,13 @@ from database.db import (
     create_expense,
     get_category_breakdown,
     get_db,
+    get_expense,
     get_expense_summary,
     get_recent_expenses,
     get_user_by_id,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -333,9 +335,41 @@ def add_expense():
     )
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    user_row = _current_user_row()
+    if user_row is None:
+        return redirect(url_for("login"))
+
+    expense = get_expense(user_row["id"], id)
+    if expense is None:
+        abort(404)
+
+    today = date.today()
+    errors = {}
+    values = {
+        "amount": f"{expense['amount']:.2f}",
+        "category": expense["category"],
+        "date": expense["date"],
+        "description": expense["description"] or "",
+    }
+    if request.method == "POST":
+        cleaned, errors, values = _validate_expense_form(request.form, today)
+        if not errors:
+            if not update_expense(user_row["id"], id, **cleaned):
+                abort(404)
+            return redirect(url_for("profile"))
+
+    return render_template(
+        "add_expense.html",
+        categories=CATEGORIES,
+        values=values,
+        errors=errors,
+        today=today.isoformat(),
+        min_date=MIN_EXPENSE_DATE,
+        max_description_length=MAX_DESCRIPTION_LENGTH,
+        expense_id=id,
+    )
 
 
 @app.route("/expenses/<int:id>/delete")

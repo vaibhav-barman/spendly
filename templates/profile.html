@@ -84,6 +84,7 @@
                             <th>Description</th>
                             <th>Category</th>
                             <th class="amount">Amount</th>
+                            <th><span class="visually-hidden">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,6 +94,10 @@
                             <td>{{ t.description }}</td>
                             <td><span class="badge badge-{{ t.category|lower }}">{{ t.category }}</span></td>
                             <td class="amount">{{ t.amount|inr }}</td>
+                            <td class="txn-action-cell">
+                                <a class="txn-action" href="{{ url_for('edit_expense', id=t.id) }}"
+                                   aria-label="Edit expense {{ t.description or t.category }} on {{ t.date }}">Edit</a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
