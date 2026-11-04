@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="34" height="6" viewBox="0 0 34 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Loading dots" clip-path="url(#clip0_0_4)">
+<circle id="Loading dot" cx="3" cy="3" r="3" fill="#2D4A3E"/>
+<circle id="Loading dot_2" cx="17" cy="3" r="3" fill="#2D4A3E"/>
+<circle id="Loading dot_3" cx="31" cy="3" r="3" fill="#2D4A3E"/>
+</g>
+<defs>
+<clipPath id="clip0_0_4">
+<rect width="34" height="6" fill="white"/>
+</clipPath>
+</defs>
+</svg>
