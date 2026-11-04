@@ -43,7 +43,6 @@ def test_empty_user_sees_empty_state(client, login, empty_user_id):
 
 
 def test_expense_stubs_unchanged(client):
-    assert b"Step 7" in client.get("/expenses/add").data
     assert b"Step 8" in client.get("/expenses/1/edit").data
     assert b"Step 9" in client.get("/expenses/1/delete").data
 

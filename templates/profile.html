@@ -71,7 +71,10 @@
 
     <div class="profile-grid">
         <div class="profile-panel">
-            <h2 class="panel-title">Transaction history</h2>
+            <div class="panel-header">
+                <h2 class="panel-title">Transaction history</h2>
+                <a class="btn-primary" href="{{ url_for('add_expense') }}">Add expense</a>
+            </div>
             {% if transactions %}
             <div class="table-scroll">
                 <table class="txn-table">

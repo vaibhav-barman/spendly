@@ -161,3 +161,18 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
         }
         for row in rows
     ]
+
+
+def create_expense(user_id, amount, category, expense_date, description):
+    """Insert one expense for user_id and return its id. Callers validate first."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, expense_date, description),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
