@@ -1,0 +1,41 @@
+/* Add-expense page styles. Layout and form basics come from style.css
+   (.auth-section, .auth-card, .form-group, .form-input); tokens from :root. */
+
+.field-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+}
+
+.form-input.has-error { border-color: var(--danger); }
+
+.field-optional {
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+/* No select styling exists globally, so give it the same look as inputs. */
+select.form-input {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    padding-right: 2rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
+                      linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
+    background-position: calc(100% - 1.1rem) 50%, calc(100% - 0.8rem) 50%;
+    background-size: 0.3rem 0.3rem, 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.form-actions .btn-primary { cursor: pointer; }
+
+@media (max-width: 600px) {
+    .auth-section { padding: 2rem 1rem; }
+}

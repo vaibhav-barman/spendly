@@ -1,11 +1,14 @@
 import calendar
 import os
 from datetime import date, datetime
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (
+    CATEGORIES,
+    create_expense,
     get_category_breakdown,
     get_db,
     get_expense_summary,
@@ -18,6 +21,14 @@ from database.db import (
 app = Flask(__name__)
 # The fallback is for local development only; set SECRET_KEY in any real deployment.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
+# Reject oversized request bodies (HTTP 413) before a form is parsed. Every form
+# in the app is a handful of short fields, so 16 KiB is generous.
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
+
+# Add-expense limits. Dates are compared as ISO strings, which sort correctly.
+MAX_AMOUNT = Decimal("10000000")
+MAX_DESCRIPTION_LENGTH = 200
+MIN_EXPENSE_DATE = "2000-01-01"
 
 with app.app_context():
     init_db()
@@ -169,16 +180,27 @@ def _build_profile_user(row):
     }
 
 
-@app.route("/profile")
-def profile():
+def _current_user_row():
+    """Return the logged-in user's row, or None.
+
+    None means "send them to /login": either nobody is logged in, or the
+    session points at a user that no longer exists (the session is cleared).
+    """
     user_id = session.get("user_id")
     if not user_id:
-        return redirect(url_for("login"))
-
+        return None
     user_row = get_user_by_id(user_id)
     if user_row is None:
         session.clear()
+    return user_row
+
+
+@app.route("/profile")
+def profile():
+    user_row = _current_user_row()
+    if user_row is None:
         return redirect(url_for("login"))
+    user_id = user_row["id"]
 
     date_from, date_to, filter_error = _parse_date_range(request.args)
     presets = _build_presets(date.today())
@@ -213,9 +235,102 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+def _parse_amount(raw):
+    """Return raw as a float rounded half-up to 2 places, or None if invalid.
+
+    Decimal (not float) so 12.345 becomes 12.35 deterministically. inf, sNaN and
+    absurd exponents raise InvalidOperation in quantize(); a quiet NaN comes
+    back as NaN and fails is_finite(), which must be checked before comparing.
+    """
+    try:
+        amount = Decimal(raw).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except InvalidOperation:
+        return None
+    if amount.is_finite() and 0 < amount <= MAX_AMOUNT:
+        return float(amount)
+    return None
+
+
+def _blank_expense_values(today):
+    """Form values for a fresh add-expense page (date defaults to today)."""
+    return {
+        "amount": "",
+        "category": "",
+        "date": today.isoformat(),
+        "description": "",
+    }
+
+
+def _validate_expense_form(form, today):
+    """Validate the add-expense form.
+
+    Returns (cleaned, errors, values). `values` holds the stripped raw input so
+    a failed submit can re-populate the form. `cleaned` is keyed by the
+    parameter names of `create_expense` and is only meaningful when `errors` is
+    empty; `errors` maps a field name to its message.
+    """
+    values = {
+        "amount": (form.get("amount") or "").strip(),
+        "category": form.get("category") or "",
+        "date": (form.get("date") or "").strip(),
+        "description": (form.get("description") or "").strip(),
+    }
+    cleaned = {}
+    errors = {}
+
+    amount = _parse_amount(values["amount"])
+    if amount is None:
+        errors["amount"] = "Enter a valid amount greater than 0."
+    else:
+        cleaned["amount"] = amount
+
+    if values["category"] in CATEGORIES:
+        cleaned["category"] = values["category"]
+    else:
+        errors["category"] = "Choose a category."
+
+    expense_date = _parse_iso_date(values["date"])
+    if expense_date is None or not (
+        MIN_EXPENSE_DATE <= expense_date <= today.isoformat()
+    ):
+        errors["date"] = "Enter a valid date that is not in the future."
+    else:
+        cleaned["expense_date"] = expense_date
+
+    if len(values["description"]) > MAX_DESCRIPTION_LENGTH:
+        errors["description"] = (
+            f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer."
+        )
+    else:
+        cleaned["description"] = values["description"]
+
+    return cleaned, errors, values
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    user_row = _current_user_row()
+    if user_row is None:
+        return redirect(url_for("login"))
+
+    today = date.today()
+    errors = {}
+    values = _blank_expense_values(today)
+    if request.method == "POST":
+        cleaned, errors, values = _validate_expense_form(request.form, today)
+        if not errors:
+            create_expense(user_row["id"], **cleaned)
+            return redirect(url_for("profile"))
+
+    return render_template(
+        "add_expense.html",
+        categories=CATEGORIES,
+        values=values,
+        errors=errors,
+        today=today.isoformat(),
+        min_date=MIN_EXPENSE_DATE,
+        max_description_length=MAX_DESCRIPTION_LENGTH,
+    )
 
 
 @app.route("/expenses/<int:id>/edit")
