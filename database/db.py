@@ -81,3 +81,71 @@ def seed_db():
         conn.commit()
     finally:
         conn.close()
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, name, email, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def get_recent_expenses(user_id, limit=10):
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT date, description, category, amount FROM expenses "
+            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_expense_summary(user_id):
+    conn = get_db()
+    try:
+        totals = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS cnt "
+            "FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        top = conn.execute(
+            "SELECT category FROM expenses WHERE user_id = ? "
+            "GROUP BY category ORDER BY SUM(amount) DESC, category LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        return {
+            "total_spent": float(totals["total"]),
+            "transaction_count": int(totals["cnt"]),
+            "top_category": top["category"] if top else None,
+        }
+    finally:
+        conn.close()
+
+
+def get_category_breakdown(user_id):
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT category AS name, SUM(amount) AS total "
+            "FROM expenses WHERE user_id = ? "
+            "GROUP BY category ORDER BY SUM(amount) DESC, category",
+            (user_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+    grand_total = sum(row["total"] for row in rows)
+    return [
+        {
+            "name": row["name"],
+            "total": float(row["total"]),
+            "percent": round(row["total"] / grand_total * 100) if grand_total else 0,
+        }
+        for row in rows
+    ]
