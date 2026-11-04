@@ -108,7 +108,7 @@ def get_recent_expenses(user_id, limit=10, date_from=None, date_to=None):
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ? " + _DATE_FILTER + " "
             "ORDER BY date DESC, id DESC LIMIT ?",
             (user_id, *_date_params(date_from, date_to), limit),
@@ -174,5 +174,37 @@ def create_expense(user_id, amount, category, expense_date, description):
         )
         conn.commit()
         return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def get_expense(user_id, expense_id):
+    """Return one expense as a dict, or None if it is missing or not user_id's."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def update_expense(user_id, expense_id, amount, category, expense_date, description):
+    """Update user_id's expense; True if a row was changed, False if none matched.
+
+    Callers validate first. Ownership is enforced here too via AND user_id = ?.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, expense_date, description, expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
     finally:
         conn.close()

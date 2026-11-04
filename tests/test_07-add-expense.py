@@ -662,12 +662,12 @@ class TestProfileReflectsExpense:
 # ------------------------------------------------------------------ #
 
 class TestOtherStubsUnchanged:
-    def test_edit_stub_still_returns_stub_response(self, client):
+    def test_edit_route_requires_login(self, client):
         with client.application.test_request_context():
             edit_url = url_for("edit_expense", id=1)
         response = client.get(edit_url)
-        assert response.status_code == 200
-        assert b"Step 8" in response.data
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
 
     def test_delete_stub_still_returns_stub_response(self, client):
         with client.application.test_request_context():
