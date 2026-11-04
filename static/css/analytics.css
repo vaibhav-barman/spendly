@@ -1,0 +1,109 @@
+/* Analytics "coming soon" page — values taken from the Figma design */
+
+.analytics-section {
+    min-height: calc(100vh - 60px - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: #f5f5f5;
+    font-family: 'Inter', var(--font-body);
+}
+
+.analytics-card {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow:
+        0 3px 10px -2px rgba(27, 48, 36, 0.02),
+        0 20px 48px -8px rgba(27, 48, 36, 0.04);
+}
+
+.analytics-intro {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+.analytics-badge-icon {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2d4a3e;
+    border-radius: 18px;
+}
+
+.analytics-badge-icon img { display: block; width: 30px; height: 30px; }
+
+.analytics-pill {
+    padding: 8px 16px;
+    background: #2d4a3e;
+    border-radius: 100px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 14px;
+    letter-spacing: 1.6px;
+    white-space: nowrap;
+}
+
+.analytics-description {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    text-align: center;
+}
+
+.analytics-title {
+    width: 100%;
+    color: #202824;
+    font-family: inherit;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 38px;
+    letter-spacing: -0.9px;
+}
+
+.analytics-text {
+    width: 100%;
+    color: #535a56;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 26px;
+}
+
+.analytics-status {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding-top: 40px;
+}
+
+.analytics-status img { display: block; width: 34px; height: 6px; }
+
+.analytics-status-text {
+    width: 100%;
+    color: #858b87;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .analytics-card { padding: 40px 24px; }
+}

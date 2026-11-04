@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Analytics · Spendly{% endblock %}
+{% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+{% block content %}
+<section class="analytics-section">
+    <div class="analytics-card">
+        <div class="analytics-intro">
+            <div class="analytics-badge-icon">
+                <img src="{{ url_for('static', filename='img/analytics-clock.svg') }}" alt="" width="30" height="30">
+            </div>
+            <span class="analytics-pill">COMING SOON</span>
+        </div>
+        <div class="analytics-description">
+            <h1 class="analytics-title">Advanced Analytics</h1>
+            <p class="analytics-text">We're working on powerful insights and visualizations to help you understand your spending patterns better.</p>
+        </div>
+        <div class="analytics-status">
+            <img src="{{ url_for('static', filename='img/analytics-loading-dots.svg') }}" alt="" width="34" height="6">
+            <p class="analytics-status-text">We're crafting something special.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
