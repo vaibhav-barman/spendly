@@ -467,9 +467,8 @@ def test_add_expense_still_creates_row(client, login, empty_user_id):
     assert _count_user(empty_user_id) == 1
 
 
-def test_delete_stub_untouched(client):
-    resp = client.get("/expenses/1/delete")
-    assert b"Step 9" in resp.data
+def test_delete_get_not_allowed(client):
+    assert client.get("/expenses/1/delete").status_code == 405
 
 
 # ----------------------------------------------------------------- SQL

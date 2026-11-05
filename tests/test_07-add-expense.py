@@ -669,9 +669,8 @@ class TestOtherStubsUnchanged:
         assert response.status_code == 302
         assert response.headers["Location"].endswith("/login")
 
-    def test_delete_stub_still_returns_stub_response(self, client):
+    def test_delete_get_returns_405(self, client):
         with client.application.test_request_context():
             delete_url = url_for("delete_expense", id=1)
         response = client.get(delete_url)
-        assert response.status_code == 200
-        assert b"Step 9" in response.data
+        assert response.status_code == 405
