@@ -353,5 +353,5 @@ def test_error_banner_uses_shared_auth_error_class(client, login, empty_user_id)
     assert 'class="auth-error" role="alert"' in html
 
 
-def test_delete_stub_untouched(client):
-    assert b"Step 9" in client.get("/expenses/1/delete").data
+def test_delete_get_not_allowed(client):
+    assert client.get("/expenses/1/delete").status_code == 405

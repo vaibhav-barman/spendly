@@ -99,7 +99,7 @@ pytest -s
 | `GET /profile` | Stub — Step 4 |
 | `GET/POST /expenses/add` | Implemented — renders `add_expense.html`, saves the expense, redirects to `/profile` |
 | `GET /expenses/<id>/edit` | Stub — Step 8 |
-| `GET /expenses/<id>/delete` | Stub — Step 9 |
+| `POST /expenses/<id>/delete` | Implemented — deletes the user's expense, redirects to `/profile` |
 
 **Do not implement a stub route unless the active task explicitly targets that step.**
 

@@ -97,6 +97,12 @@
                             <td class="txn-action-cell">
                                 <a class="txn-action" href="{{ url_for('edit_expense', id=t.id) }}"
                                    aria-label="Edit expense {{ t.description or t.category }} on {{ t.date }}">Edit</a>
+                                <form class="txn-delete-form" method="post"
+                                      action="{{ url_for('delete_expense', id=t.id) }}"
+                                      data-confirm="Delete this expense? This cannot be undone.">
+                                    <button type="submit" class="txn-action txn-action-delete"
+                                            aria-label="Delete expense {{ t.description or t.category }} on {{ t.date }}">Delete</button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

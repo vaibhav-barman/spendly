@@ -208,3 +208,20 @@ def update_expense(user_id, expense_id, amount, category, expense_date, descript
         return cur.rowcount > 0
     finally:
         conn.close()
+
+
+def delete_expense(user_id, expense_id):
+    """Delete user_id's expense; True if a row was removed, False if none matched.
+
+    Ownership is enforced here too via AND user_id = ?.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()

@@ -42,8 +42,8 @@ def test_empty_user_sees_empty_state(client, login, empty_user_id):
     assert "Dinner out" not in html
 
 
-def test_delete_stub_unchanged(client):
-    assert b"Step 9" in client.get("/expenses/1/delete").data
+def test_delete_get_not_allowed(client):
+    assert client.get("/expenses/1/delete").status_code == 405
 
 
 def test_inr_filter_indian_grouping():

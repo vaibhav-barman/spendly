@@ -240,6 +240,27 @@
     text-decoration: underline;
 }
 
+.txn-delete-form {
+    display: inline;
+    margin: 0 0 0 0.75rem;
+}
+
+.txn-action-delete {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--danger);
+}
+
+.txn-action-delete:hover,
+.txn-action-delete:focus-visible {
+    color: var(--danger);
+    text-decoration: underline;
+}
+
 .visually-hidden {
     position: absolute;
     width: 1px;
