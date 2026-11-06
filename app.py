@@ -1,14 +1,25 @@
 import calendar
 import os
+import sqlite3
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
-from flask import Flask, abort, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash
 
 from database.db import (
     CATEGORIES,
     create_expense,
+    create_user,
     delete_expense as delete_expense_row,
     get_category_breakdown,
     get_db,
@@ -32,6 +43,9 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 MAX_AMOUNT = Decimal("10000000")
 MAX_DESCRIPTION_LENGTH = 200
 MIN_EXPENSE_DATE = "2000-01-01"
+
+# Registration limit.
+MIN_PASSWORD_LENGTH = 8
 
 with app.app_context():
     init_db()
@@ -65,11 +79,38 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
     if session.get("user_id"):
         return redirect(url_for("profile"))
-    return render_template("register.html")
+
+    if request.method == "GET":
+        return render_template("register.html")
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    error = None
+    if not name or not email or not password or not confirm_password:
+        error = "All fields are required"
+    elif len(password) < MIN_PASSWORD_LENGTH:
+        error = f"Password must be at least {MIN_PASSWORD_LENGTH} characters"
+    elif password != confirm_password:
+        error = "Passwords do not match"
+
+    if error is None:
+        try:
+            create_user(name, email, password)
+        except sqlite3.IntegrityError:
+            error = "Email already registered"
+
+    if error:
+        return render_template("register.html", error=error, name=name, email=email)
+
+    flash("Account created. Please sign in.")
+    return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
